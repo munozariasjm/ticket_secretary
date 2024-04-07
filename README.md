@@ -1,10 +1,10 @@
 # Ticket Secretary: Optimal Ticket Purchasing via the Secretary Problem
 
 Ticket Secretary leverages a classic statistical theory to provide a smart, data-driven approach to purchasing tickets, aiming to save money and reduce the hassle in timing the purchase.
+Ticket Secretary is a library that applies the secretary problem's statistical solution to optimize ticket purchasing for events like flights or concerts. It identifies the best time to buy tickets based on price trends and mathematical strategies.
 
 We coded it in a couple of hours, one of our for jokes  ;)
 
-Ticket Secretary is a library that applies the secretary problem's statistical solution to optimize ticket purchasing for events like flights or concerts. It identifies the best time to buy tickets based on price trends and mathematical strategies.
 
 ## Secretary Problem in Depth
 The secretary problem illustrates a scenario where one must choose the best option (e.g., secretary, ticket price) after seeing only a portion of the available choices. Mathematically, after reviewing \(e^{-1} \approx 37\%\) of the options, the next option better than all seen before is chosen. This strategy statistically provides the best chance of selecting the optimum choice.
