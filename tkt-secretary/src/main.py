@@ -1,14 +1,21 @@
-
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import List
 from ..api.gflights_scrapper import GFlightsScrapper
 from ..utils.email import send_email
+from ..utils.mongo import MongoDataManager
+
 
 class SecretarySolver:
 
-    def __init__(self, flight_deadline: bool, routes: List[str], user_mail: str, use_duration_weight: bool = False):
+    def __init__(
+        self,
+        flight_deadline: bool,
+        routes: List[str],
+        user_mail: str,
+        use_duration_weight: bool = False,
+    ):
         self.flight_deadline = flight_deadline
         self.routes = routes
         self.user_mail = user_mail
@@ -16,9 +23,15 @@ class SecretarySolver:
         self.scrapper = GFlightsScrapper()
         self.use_duration_weight = use_duration_weight
 
+        db_url = "mongodb"
+        db_name = "flights"
+        self.db_manager = MongoDataManager(db_url, db_name)
+
     def setup(self):
         self.intialization_date = datetime.now()
-        self.history = pd.DataFrame(columns=['date', 'route', 'price', 'flight_duration'])
+        self.history = pd.DataFrame(
+            columns=["date", "route", "price", "flight_duration"]
+        )
 
     def estimate_possible_dates(self):
         """
@@ -37,7 +50,6 @@ class SecretarySolver:
         loc = 0.37 * len(self.estimate_possible_dates())
         date_loc = self.estimate_possible_dates()[int(loc)]
         return date_loc
-
 
     def normalizer(self, data):
         """
@@ -58,14 +70,29 @@ class SecretarySolver:
         if today < self.estimate_measuring_cutoff():
             for route in self.routes:
                 price, flight_duration = self.scrapper.get_flight_info(route)
-                self.history = self.history.append({'date': today, 'route': route, 'price': price, 'flight_duration': flight_duration}, ignore_index=True)
+                self.history = self.history.append(
+                    {
+                        "date": today,
+                        "route": route,
+                        "price": price,
+                        "flight_duration": flight_duration,
+                    },
+                    ignore_index=True,
+                )
+                self.db_manager.store_flight_data(
+                    self.user_mail, route, price, flight_duration
+                )
 
         else:
             # Take the best price and flight duration
-            best_price = self.history['price'].min()
-            best_flight_duration = self.history[self.history['price'] == best_price]['flight_duration'].values[0]
+            best_price = self.history["price"].min()
+            best_flight_duration = self.history[self.history["price"] == best_price][
+                "flight_duration"
+            ].values[0]
             if self.use_duration_weight:
-                scores = self.normalizer(best_price) + self.normalizer(best_flight_duration)
+                scores = self.normalizer(best_price) + self.normalizer(
+                    best_flight_duration
+                )
             else:
                 scores = self.normalizer(best_price)
             if scores.min() == scores.iloc[-1]:
@@ -75,4 +102,8 @@ class SecretarySolver:
                 pass
 
     def send_email(self):
-        send_email(self.user_mail, "Best flight found", "The secretary has found the best flight for you!")
+        send_email(
+            self.user_mail,
+            "Best flight found",
+            "The secretary has found the best flight for you!",
+        )
